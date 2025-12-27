@@ -26,5 +26,9 @@ public:
     static Type get_type(uint8_t piece);
     static bool is_white(uint8_t piece);
     static bool has_moved(uint8_t piece);
+    static void set_moved(uint8_t& piece);
+    static void unset_moved(uint8_t& piece);
     static bool can_be_captured_en_passant(uint8_t pawn);
+    static void set_en_passant_valid(uint8_t& pawn);
+    static void set_en_passant_invalid(uint8_t& pawn);
 };

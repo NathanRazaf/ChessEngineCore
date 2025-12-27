@@ -33,3 +33,26 @@ TEST(PositionTest_GetSquareNotation, ThrowsOnIndexTooLarge) {
     EXPECT_THROW(IPosition::get_square_notation(65), std::out_of_range);
     EXPECT_THROW(IPosition::get_square_notation(100), std::out_of_range);
 }
+
+TEST(PositionTest_GetSquareIndex, TestCorners) {
+    EXPECT_EQ(IPosition::get_square_index("a8"), 0);
+    EXPECT_EQ(IPosition::get_square_index("h8"), 7);
+    EXPECT_EQ(IPosition::get_square_index("a1"), 56);
+    EXPECT_EQ(IPosition::get_square_index("h1"), 63);
+}
+
+TEST(PositionTest_GetSquareIndex, TestBorderSquares) {
+    EXPECT_EQ(IPosition::get_square_index("a5"), 24);
+    EXPECT_EQ(IPosition::get_square_index("h5"), 31);
+    EXPECT_EQ(IPosition::get_square_index("e8"), 4);
+    EXPECT_EQ(IPosition::get_square_index("e1"), 60);
+    EXPECT_EQ(IPosition::get_square_index("a4"), 32);
+    EXPECT_EQ(IPosition::get_square_index("h4"), 39);
+}                                   
+                                    
+TEST(PositionTest_GetSquareIndex, TestInnerquares) {
+    EXPECT_EQ(IPosition::get_square_index("e5"), 28);
+    EXPECT_EQ(IPosition::get_square_index("d4"), 35);
+    EXPECT_EQ(IPosition::get_square_index("d5"), 27);
+    EXPECT_EQ(IPosition::get_square_index("e4"), 36);
+}

@@ -1,6 +1,7 @@
 #include "Position.h"
 #include <map>
 #include <cctype>
+#include <iostream>
 
 Position::Position() {
     clear_board();
@@ -50,12 +51,12 @@ void Position::set_piece(int square, uint8_t piece) {
 void Position::set_position(const std::string& fen) {
     // Map to find the piece types based on the letter read
     std::map<char, Type> pieceTypes = {
-        {'p', Type::PAWN},
-        {'r', Type::ROOK},
-        {'n', Type::KNIGHT},
-        {'b', Type::BISHOP},
-        {'q', Type::QUEEN},
-        {'k', Type::KING}
+        {'p', PAWN},
+        {'r', ROOK},
+        {'n', KNIGHT},
+        {'b', BISHOP},
+        {'q', QUEEN},
+        {'k', KING}
     };
    
     int square = 0;
@@ -66,7 +67,7 @@ void Position::set_position(const std::string& fen) {
         char letter = fen[index]; // Current FEN letter to read
         if (fen[index] == '/') {
             index++;
-            continue; // It's to get to next line, we use a 1-dimensional array
+            continue; // It's to get to next rank, we use a 1-dimensional array
                       // so we don't need to process it
         }
         if (std::isdigit(letter)) {
@@ -77,7 +78,7 @@ void Position::set_position(const std::string& fen) {
         else {
             // It's a piece
             // Uppercase letters are for white pieces
-            Color color = std::isupper(letter) ? Color::WHITE : Color::BLACK;
+            Color color = std::isupper(letter) ? WHITE : BLACK;
             Type type = pieceTypes[std::tolower(letter)];
             uint8_t piece = Piece::create_piece(color, type);
 
@@ -92,7 +93,56 @@ void Position::set_position(const std::string& fen) {
     char color = fen[index];
     is_white_turn = color == 'w'; // White's turn if letter is w
 
-    // TODO : Treat en-passant state and castling state
+    index += 2; // Skip the space and get directly to next FEN letter
+
+    // Manage the castling rights
+    bool has_K = false, has_Q = false, has_k = false, has_q = false;
+
+    // Scan what castling rights are present
+    int castling_start = index;
+    while (index < fen.length() && fen[index] != ' ') {
+        char right = fen[index];
+        if (right == 'K') has_K = true;
+        else if (right == 'Q') has_Q = true;
+        else if (right == 'k') has_k = true;
+        else if (right == 'q') has_q = true;
+        index++;
+    }
+
+    // Mark rooks as moved if their corresponding castling right is absent
+    if (!has_K && Piece::get_type(board[63]) == ROOK &&
+        Piece::is_white(board[63])) {
+        Piece::set_moved(board[63]); // h1 - White kingside
+    }
+    if (!has_Q && Piece::get_type(board[56]) == ROOK &&
+        Piece::is_white(board[56])) {
+        Piece::set_moved(board[56]); // a1 - White queenside
+    }
+    if (!has_k && Piece::get_type(board[7]) == ROOK &&
+        !Piece::is_white(board[7])) {
+        Piece::set_moved(board[7]); // h8 - Black kingside
+    }
+    if (!has_q && Piece::get_type(board[0]) == ROOK &&
+        !Piece::is_white(board[0])) {
+        Piece::set_moved(board[0]); // a8 - Black queenside
+    }
+    
+    index++; // Skip
+
+    if (fen[index] != '-') { // It's an en passant move
+        char file = fen[index];
+        index++;
+        char rank = fen[index];
+        std::string strSquare = { file, rank };
+        int targetSquare = get_square_index(strSquare);
+        // Pawn orientation
+        int targetedPawnSquare = is_white_turn ? targetSquare + 8 : targetSquare - 8;
+        Piece::set_en_passant_valid(board[targetedPawnSquare]);
+    }
+
+    index++;
+
+    // TODO : Halfmoves and full moves
 }
 
 std::vector<int> Position::get_sliding_moves(uint8_t piece, int square) const {
@@ -109,15 +159,15 @@ std::vector<int> Position::get_sliding_moves(uint8_t piece, int square) const {
     int dir_count;
 
     switch (piece_type) {
-    case Type::ROOK:
+    case ROOK:
         move_dirs = ROOK_MOVES;
         dir_count = 4;
         break;
-    case Type::BISHOP:
+    case BISHOP:
         move_dirs = BISHOP_MOVES;
         dir_count = 4;
         break;
-    case Type::QUEEN:
+    case QUEEN:
         move_dirs = QUEEN_MOVES;
         dir_count = 8;
         break;
