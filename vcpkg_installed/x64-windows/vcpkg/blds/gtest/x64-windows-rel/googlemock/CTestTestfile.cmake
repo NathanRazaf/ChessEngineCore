@@ -1,0 +1,7 @@
+# CMake generated Testfile for 
+# Source directory: C:/pute/ChessEngineCore/vcpkg_installed/x64-windows/vcpkg/blds/gtest/src/v1.16.0-a2e0b328c1.clean/googlemock
+# Build directory: C:/pute/ChessEngineCore/vcpkg_installed/x64-windows/vcpkg/blds/gtest/x64-windows-rel/googlemock
+# 
+# This file includes the relevant testing commands required for 
+# testing this directory and lists subdirectories to be tested as well.
+subdirs("../googletest")

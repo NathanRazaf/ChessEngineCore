@@ -1,22 +1,22 @@
 // ChessEngineCore.cpp : This file contains the 'main' function. Program execution begins and ends there.
 //
 
-#include <iostream>
-
-int main()
-{
-    std::cout << "Hello World!\n";
-	std::cout << "This is a simple C++ program to demonstrate the structure of a C++ application.\n";
-
-	uint8_t black_pawn = 8;
-	uint8_t black_knight = 9;
-	uint8_t black_bishop = 10;
-	uint8_t white_bishop = 2;
-	std::cout << static_cast<int>(black_pawn & 8);
-	std::cout << static_cast<int>(black_knight & 8);
-	std::cout << static_cast<int>(black_bishop & 8);
-	std::cout << static_cast<int>(white_bishop & 8);
-}
+//#include <iostream>
+//
+//int main()
+//{
+//    std::cout << "Hello World!\n";
+//	std::cout << "This is a simple C++ program to demonstrate the structure of a C++ application.\n";
+//
+//	uint8_t black_pawn = 0b00001000;
+//	uint8_t black_knight = 0b00001011;
+//	uint8_t black_bishop = 0b00001110;
+//	uint8_t white_bishop = 0b00000110;
+//	std::cout << static_cast<int>(black_pawn & 8);
+//	std::cout << static_cast<int>(black_knight & 8);
+//	std::cout << static_cast<int>(black_bishop & 8);
+//	std::cout << static_cast<int>(white_bishop & 8);
+//}
 
 // Run program: Ctrl + F5 or Debug > Start Without Debugging menu
 // Debug program: F5 or Debug > Start Debugging menu
