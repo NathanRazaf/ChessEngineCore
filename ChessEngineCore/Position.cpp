@@ -25,6 +25,19 @@ void Position::move(int start, int end) {
     if (!is_square_valid(end)) {
         throw std::out_of_range("End square index out of bounds");
     }
+
+    halfmove_clock++;
+    // Reset halfmove clock if the piece moved is a pawn or if the end square had a piece
+    if ((Piece::get_type(get_piece(start)) == PAWN) ||
+        (get_piece(end) != 0)) {
+        halfmove_clock = 0;
+    };
+
+    // Increment fullmoves if black's turn
+    if (get_turn() == BLACK) {
+        fullmoves++;
+    }
+    
     uint8_t piece = board[start];
     board[end] = piece;
     board[start] = 0;
@@ -140,9 +153,27 @@ void Position::set_position(const std::string& fen) {
         Piece::set_en_passant_valid(board[targetedPawnSquare]);
     }
 
-    index++;
+    index += 2; // Skip space
 
-    // TODO : Halfmoves and full moves
+    std::string halfmoveStr = "";
+    // This is supposed to be the number representing the halfmove clock
+    while (index < fen.length() && fen[index] != ' ') {
+        halfmoveStr += fen[index];
+        index++;
+    }
+
+    halfmove_clock = std::stoi(halfmoveStr);
+
+    index++; // Skip space
+
+    std::string fullmoveStr = "";
+    // This is supposed to be the number representing the number of fullmoves
+    while (index < fen.length() && fen[index] != ' ') {
+        fullmoveStr += fen[index];
+        index++;
+    }
+
+    fullmoves = std::stoi(fullmoveStr);
 }
 
 std::vector<int> Position::get_sliding_moves(uint8_t piece, int square) const {

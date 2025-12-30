@@ -9,6 +9,8 @@
 class IPosition {
 protected:
     bool is_white_turn;
+    int halfmove_clock;
+    int fullmoves;
 
 public:
     virtual ~IPosition() = default; 
@@ -21,6 +23,14 @@ public:
     
     Color get_turn() const {
         return is_white_turn ? WHITE : BLACK;
+    };
+
+    int get_halfmove_clock() {
+        return halfmove_clock;
+    };
+
+    int get_fullmoves_number() {
+        return fullmoves;
     };
 
     bool is_empty(int square) const {
