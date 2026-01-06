@@ -5,7 +5,7 @@
 #include <iostream>
 
 int main() {
-    uint8_t piece = Piece::create_piece(WHITE, PAWN);
+    uint8_t piece = Piece::createPiece(WHITE, PAWN);
     std::cout << "Created a piece!\n";
     std::cout << static_cast<int>(piece);
     return 0;

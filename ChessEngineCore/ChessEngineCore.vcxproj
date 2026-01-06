@@ -102,6 +102,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -116,6 +117,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -123,13 +125,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Piece.cpp" />
+    <ClCompile Include="BBPosition.cpp" />
     <ClCompile Include="Position.cpp" />
+    <ClCompile Include="MoveGenerator.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="BBPosition.h" />
+    <ClInclude Include="ChessDirections.h" />
+    <ClInclude Include="commons.h" />
+    <ClInclude Include="Move.h" />
+    <ClInclude Include="MoveGenerator.h" />
     <ClInclude Include="IPosition.h" />
     <ClInclude Include="Piece.h" />
     <ClInclude Include="Position.h" />
+    <ClInclude Include="types.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

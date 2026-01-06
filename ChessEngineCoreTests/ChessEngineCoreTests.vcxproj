@@ -106,6 +106,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)ChessEngineCore</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -121,6 +122,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)ChessEngineCore</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -130,9 +132,8 @@
   <ItemGroup>
     <ClCompile Include="ChessEngineCoreTests.cpp" />
     <ClCompile Include="FENTests.cpp" />
-    <ClCompile Include="MovementTests.cpp" />
-    <ClCompile Include="PieceTests.cpp" />
-    <ClCompile Include="SquareNotationTests.cpp" />
+    <ClCompile Include="MoveGeneratorTests.cpp" />
+    <ClCompile Include="SquareUtilTests.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\ChessEngineCore\ChessEngineCore.vcxproj">

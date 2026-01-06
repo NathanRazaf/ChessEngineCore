@@ -16,22 +16,22 @@
     <Filter Include="Source Files\PositionTests">
       <UniqueIdentifier>{2405bb71-6b01-41e4-8bfe-1d5f7731e455}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\MoveTests">
+      <UniqueIdentifier>{aff2d92c-4985-4c41-a042-13bd1dfff92e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ChessEngineCoreTests.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="PieceTests.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="SquareNotationTests.cpp">
-      <Filter>Source Files\PositionTests</Filter>
-    </ClCompile>
-    <ClCompile Include="MovementTests.cpp">
+    <ClCompile Include="SquareUtilTests.cpp">
       <Filter>Source Files\PositionTests</Filter>
     </ClCompile>
     <ClCompile Include="FENTests.cpp">
       <Filter>Source Files\PositionTests</Filter>
+    </ClCompile>
+    <ClCompile Include="MoveGeneratorTests.cpp">
+      <Filter>Source Files\MoveTests</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

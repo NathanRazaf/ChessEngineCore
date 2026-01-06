@@ -15,21 +15,42 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Piece.cpp">
+    <ClCompile Include="Position.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Position.cpp">
+    <ClCompile Include="MoveGenerator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="BBPosition.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Piece.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Position.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="IPosition.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MoveGenerator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Move.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="commons.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ChessDirections.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="BBPosition.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Piece.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

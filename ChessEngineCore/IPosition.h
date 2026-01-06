@@ -4,61 +4,58 @@
 #include <vector>
 #include <cmath>
 #include <stdexcept>
-#include "Piece.h"
+#include "types.h"
+#include "commons.h"
+#include "Move.h"
 
 class IPosition {
 protected:
-    bool is_white_turn;
-    int halfmove_clock;
-    int fullmoves;
+    bool m_isWhiteTurn = true;
+    int m_halfmoveClock = 0;
+    int m_fullmoves = 0;
 
+    CastlingRights cr;
+
+    Piece board[64];
+
+    // En passant target square
+    Square m_enPassantSquare = EMPTY;
+
+    virtual void clearBoard() = 0;
+    inline bool hasWhiteKingCastling() { return cr & W_KING_SIDE; }
+    inline bool hasWhiteQueenCastling() { return cr & W_QUEEN_SIDE; }
+    inline bool hasBlackKingCastling() { return cr & B_KING_SIDE; }
+    inline bool hasBlackQueenCastling() { return cr & B_QUEEN_SIDE; }
+    inline void addCr(CastlingType ct) { cr |= ct; }
+    inline void removeCr(CastlingType ct) { cr &= ~ct; }
 public:
-    virtual ~IPosition() = default; 
+    virtual ~IPosition() = default;
 
     // (= 0 means "must be implemented")
-    virtual uint8_t get_piece(int square) const = 0;
-    virtual void set_piece(int square, uint8_t piece) = 0;
-    virtual void set_position(const std::string& fen) = 0;
-    virtual std::vector<int> get_moves(int square) const = 0;
-    
-    Color get_turn() const {
-        return is_white_turn ? WHITE : BLACK;
-    };
+    virtual Piece getPiece(Square sq) const = 0;
+    virtual void setPiece(Square sq, Piece piece) = 0;
+    virtual void setPosition(const std::string& fen) = 0;
+    virtual void doMove(Square start, Square end) = 0;
+    virtual std::vector<Move> getMoves() const = 0;
+    virtual Bitboard getOccupancyBitboard() const = 0;
 
-    int get_halfmove_clock() {
-        return halfmove_clock;
-    };
-
-    int get_fullmoves_number() {
-        return fullmoves;
-    };
-
-    bool is_empty(int square) const {
-        return get_piece(square) == 0;
+    Color getTurn() const {
+        return m_isWhiteTurn ? WHITE : BLACK;
     }
 
-    static bool is_square_valid(int square) {
-        return square >= 0 && square < 64;
+    int getHalfmoveClock() const {
+        return m_halfmoveClock;
     }
 
-    static std::string get_square_notation(int square) {
-        if (!is_square_valid(square)) {
-            throw std::out_of_range("Square index out of bounds");
-        }
-
-        int file = square % 8;
-        int rank = 8 - (square / 8);
-
-        return std::string{ char('a' + file), char('0' + rank) };
+    int getFullmovesNumber() const {
+        return m_fullmoves;
     }
 
-    static int get_square_index(std::string notation) {
-        char file = notation[0];
-        char rank = notation[1];
+    Square getEnPassantSquare() const {
+        return m_enPassantSquare;
+    }
 
-        int mult = ('8' - rank) * 8;
-        int modulo = file - 'a';
-        
-        return mult + modulo;
+    bool isEmpty(int square) const {
+        return getPiece(square) == 0;
     }
 };
