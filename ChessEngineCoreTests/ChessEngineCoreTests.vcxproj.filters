@@ -33,5 +33,8 @@
     <ClCompile Include="MoveGeneratorTests.cpp">
       <Filter>Source Files\MoveTests</Filter>
     </ClCompile>
+    <ClCompile Include="ChessDirectionTests.cpp">
+      <Filter>Source Files\MoveTests</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

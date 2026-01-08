@@ -25,12 +25,20 @@ void printMoves(const std::vector<Move>& moves) {
     }
 }
 
-TEST(MoveGeneratorTest_TestSlidingPieces, TestRookMovesInEmptyPosition) {
-    BBPosition p("5B2/8/3Pkrp1/2PR1n2/3K4/8/8/8 b - - 0 1");
+TEST(MoveGeneratorTest_TestSlidingPieces, TestMovesInSmallPosition) {
+    BBPosition p("5B2/3R4/3Pkrp1/2P2p2/2K2b2/6p1/3p4/8 b - - 0 1");
     std::vector<Move> moves = p.getMoves();
     
     // printMoves(moves);
 
+    // Black's turn
+    // Rook moves
     EXPECT_TRUE(containsMove(moves, 45, 53));
     EXPECT_TRUE(containsMove(moves, 45, 61, IS_CAPTURE));
+    // Bishop moves
+    EXPECT_TRUE(containsMove(moves, 29, 20));
+    EXPECT_TRUE(containsMove(moves, 29, 38));
+    EXPECT_TRUE(containsMove(moves, 29, 47));
+    EXPECT_TRUE(containsMove(moves, 29, 36));
+    EXPECT_TRUE(containsMove(moves, 29, 43, IS_CAPTURE));
 }

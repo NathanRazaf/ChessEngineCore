@@ -83,9 +83,32 @@ private:
     void initBishopMasks();
     void initSlidingOffsets();
     void initRookAttackTable();
-    Bitboard indexToOccupancy(int index, Bitboard mask) const;
+    void initBishopAttackTable();
+    Bitboard indexToOccupancy(int index, Bitboard mask) const {
+        Bitboard occupancy = 0;
+        Bitboard maskCopy = mask;
+        int bitCount = 0;
+
+        while (maskCopy) {
+            // Get position of lowest bit in mask
+            int bitPos = std::countr_zero(maskCopy);  // Count trailing zeros
+
+            // If this bit is set in the index, set it in occupancy
+            if (index & (1 << bitCount)) {
+                setBit(occupancy, bitPos);
+            }
+
+            // Remove this bit from mask and move to next
+            popLsb(maskCopy);  // Clear lowest bit
+            bitCount++;
+        }
+
+        return occupancy;
+    }
     Bitboard generateRookAttacksSlow(int square, Bitboard occupied) const;
+    Bitboard generateBishopAttacksSlow(int square, Bitboard occupied) const;
     void insertRookMoves(const BBPosition& position, std::vector<Move>& moves, Bitboard alliedPieces, Bitboard enemyPieces) const;
+    void insertBishopMoves(const BBPosition& position, std::vector<Move>& moves, Bitboard alliedPieces, Bitboard enemyPieces) const;
   
     MoveGenerator() {
         initializeTables(); 

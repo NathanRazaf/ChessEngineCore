@@ -1,7 +1,7 @@
 #pragma once
 #include "types.h"
 
-enum Directions {
+enum ChessDirection {
 	NORTH = 8,
 	SOUTH = -8,
 	WEST = -1,
@@ -29,3 +29,11 @@ constexpr Bitboard Rank5BB = Rank1BB << (8 * 4);
 constexpr Bitboard Rank6BB = Rank1BB << (8 * 5);
 constexpr Bitboard Rank7BB = Rank1BB << (8 * 6);
 constexpr Bitboard Rank8BB = Rank1BB << (8 * 7);
+
+constexpr bool hitsBorder(Square square) {
+	Bitboard squareBB = 1ULL << square;
+	return (FileABB & squareBB) ||
+		(FileHBB & squareBB) ||
+		(Rank1BB & squareBB) ||
+		(Rank8BB & squareBB);
+}

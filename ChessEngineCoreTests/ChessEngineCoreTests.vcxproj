@@ -130,6 +130,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ChessDirectionTests.cpp" />
     <ClCompile Include="ChessEngineCoreTests.cpp" />
     <ClCompile Include="FENTests.cpp" />
     <ClCompile Include="MoveGeneratorTests.cpp" />
