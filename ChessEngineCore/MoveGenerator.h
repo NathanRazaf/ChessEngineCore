@@ -1,5 +1,6 @@
 #pragma once
 #include <vector>
+#include "Piece.h"
 #include "Move.h"
 #include "commons.h"
 #include "BBPosition.h"
@@ -7,6 +8,74 @@
 class MoveGenerator {
 private:
     static MoveGenerator* s_instance;
+
+    template<Type PT>
+    Bitboard getAttacks(Square square, Bitboard allPieces) const {
+        // Sliding pieces
+        if constexpr (PT == ROOK) {
+            Bitboard occupied = allPieces & m_RookMasks[square];
+            uint64_t index = (occupied * m_RookMagics[square]) >> m_RookShifts[square];
+
+            return m_RookAttackTable[m_RookOffsets[square] + index];
+        }
+        else if constexpr (PT == BISHOP) {
+            Bitboard occupied = allPieces & m_BishopMasks[square];
+            uint64_t index = (occupied * m_BishopMagics[square]) >> m_BishopShifts[square];
+
+            return m_BishopAttackTable[m_BishopOffsets[square] + index];
+        }
+        else if constexpr (PT == QUEEN) {
+            Bitboard rOccupied = allPieces & m_RookMasks[square];
+            uint64_t rIndex = (rOccupied * m_RookMagics[square]) >> m_RookShifts[square];
+            Bitboard rAttacks = m_RookAttackTable[m_RookOffsets[square] + rIndex];
+
+            Bitboard bOccupied = allPieces & m_BishopMasks[square];
+            uint64_t bIndex = (bOccupied * m_BishopMagics[square]) >> m_BishopShifts[square];
+            Bitboard bAttacks = m_BishopAttackTable[m_BishopOffsets[square] + bIndex];
+
+            return rAttacks | bAttacks;
+        }
+
+        // Knight
+        else if constexpr (PT == KNIGHT) {
+            return m_KnightAttackTable[square];
+        }
+    }
+
+    template<Type PT>
+    void insertPieceMoves(Bitboard piecePositions, Bitboard alliedPieces,
+        Bitboard enemyPieces, std::vector<Move>& moves) const {
+        Bitboard allPieces = alliedPieces | enemyPieces;
+
+        while (piecePositions) {
+            Square square = getLsb(piecePositions);
+            popLsb(piecePositions);
+
+            Bitboard attacks = getAttacks<PT>(square, allPieces) & ~alliedPieces;
+
+            insertMovesFromBitboard(square, attacks, enemyPieces, moves);
+        }
+    }
+
+    void insertMovesFromBitboard(Square from, Bitboard targets,
+        Bitboard enemyPieces, std::vector<Move>& moves) const {
+        // Captures
+        Bitboard captures = targets & enemyPieces;
+        while (captures) {
+            Square target = getLsb(captures);
+            popLsb(captures);
+            moves.emplace_back(Move(from, target, IS_CAPTURE));
+        }
+
+        // Quiet moves
+        Bitboard quietMoves = targets & ~enemyPieces;
+        while (quietMoves) {
+            Square target = getLsb(quietMoves);
+            popLsb(quietMoves);
+            moves.emplace_back(Move(from, target));
+        }
+    }
+
     // Rook magics for each square (0-63)
     const Bitboard m_RookMagics[64] = {
         0x0080001020400080ULL, 0x0040001000200040ULL, 0x0080081000200080ULL, 0x0080040800100080ULL,
@@ -70,20 +139,25 @@ private:
         58, 59, 59, 59, 59, 59, 59, 58
     };
 
-    Bitboard m_RookMasks[64];  
+    Bitboard m_RookMasks[64];
     Bitboard m_BishopMasks[64];
 
     int m_RookOffsets[64];
     int m_BishopOffsets[64];
 
-    static Bitboard RookAttackTable[102400]; // 102400 is total occupancy variations of rook attacks
-    static Bitboard BishopAttackTable[5248]; // 5248 is total occupancy variations of bishop attacks
+    static Bitboard m_RookAttackTable[102400]; // 102400 is the total occupancy variations of rook attacks
+    static Bitboard m_BishopAttackTable[5248]; // 5248 is the total occupancy variations of bishop attacks
+    static uint64_t m_KnightAttackTable[64];
+    static uint64_t m_KingAttackTable[64];
+    static uint64_t m_WhitePawnAttackTable[64];
+    static uint64_t m_BlackPawnAttackTable[64];
 
     void initRookMasks();
     void initBishopMasks();
     void initSlidingOffsets();
     void initRookAttackTable();
     void initBishopAttackTable();
+    void initKnightAttackTable();
     Bitboard indexToOccupancy(int index, Bitboard mask) const {
         Bitboard occupancy = 0;
         Bitboard maskCopy = mask;
@@ -107,11 +181,31 @@ private:
     }
     Bitboard generateRookAttacksSlow(int square, Bitboard occupied) const;
     Bitboard generateBishopAttacksSlow(int square, Bitboard occupied) const;
-    void insertRookMoves(const BBPosition& position, std::vector<Move>& moves, Bitboard alliedPieces, Bitboard enemyPieces) const;
-    void insertBishopMoves(const BBPosition& position, std::vector<Move>& moves, Bitboard alliedPieces, Bitboard enemyPieces) const;
-  
+    void insertRookMoves(const BBPosition& position, std::vector<Move>& moves,
+        Bitboard alliedPieces, Bitboard enemyPieces) const {
+        Bitboard rookPositions = position.getPieceBitboard(createPiece(position.getTurn(), ROOK));
+        insertPieceMoves<ROOK>(rookPositions, alliedPieces, enemyPieces, moves);
+    }
+
+    void insertBishopMoves(const BBPosition& position, std::vector<Move>& moves,
+        Bitboard alliedPieces, Bitboard enemyPieces) const {
+        Bitboard bishopPositions = position.getPieceBitboard(createPiece(position.getTurn(), BISHOP));
+        insertPieceMoves<BISHOP>(bishopPositions, alliedPieces, enemyPieces, moves);
+    }
+    void insertQueenMoves(const BBPosition& position, std::vector<Move>& moves,
+        Bitboard alliedPieces, Bitboard enemyPieces) const {
+        Bitboard queenPositions = position.getPieceBitboard(createPiece(position.getTurn(), QUEEN));
+        insertPieceMoves<QUEEN>(queenPositions, alliedPieces, enemyPieces, moves);
+    }
+
+    void insertKnightMoves(const BBPosition& position, std::vector<Move>& moves,
+        Bitboard alliedPieces, Bitboard enemyPieces) const {
+        Bitboard knightPositions = position.getPieceBitboard(createPiece(position.getTurn(), KNIGHT));
+        insertPieceMoves<KNIGHT>(knightPositions, alliedPieces, enemyPieces, moves);
+    }
+
     MoveGenerator() {
-        initializeTables(); 
+        initializeTables();
     }
     void initializeTables();
 public:

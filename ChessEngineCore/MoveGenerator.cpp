@@ -1,15 +1,16 @@
 #include "MoveGenerator.h"
-#include "types.h"
-#include "Piece.h"
-#include "Move.h"
 #include "ChessDirections.h"
 #include <bit>
 #include <iostream>
 
 // Define static member variables
 MoveGenerator* MoveGenerator::s_instance = nullptr;
-Bitboard MoveGenerator::RookAttackTable[102400] = {};
-Bitboard MoveGenerator::BishopAttackTable[5248] = {};
+Bitboard MoveGenerator::m_RookAttackTable[102400]  = {};
+Bitboard MoveGenerator::m_BishopAttackTable[5248]  = {};
+Bitboard MoveGenerator::m_KnightAttackTable[64]    = {};
+Bitboard MoveGenerator::m_KingAttackTable[64]      = {};
+Bitboard MoveGenerator::m_WhitePawnAttackTable[64] = {};
+Bitboard MoveGenerator::m_BlackPawnAttackTable[64] = {};
 
 void MoveGenerator::initializeTables() {
     initRookMasks();
@@ -17,32 +18,32 @@ void MoveGenerator::initializeTables() {
     initSlidingOffsets();
     initRookAttackTable();
     initBishopAttackTable();
+    initKnightAttackTable();
 }
 
 void MoveGenerator::initRookMasks() {
     FOR_EACH_SQUARE(square) {
         Bitboard mask = 0;
-        int rank = boardRank(square);
-        int file = boardFile(square);
+        int startRank = boardRank(square);
 
-        // North (increasing rank, stop before edge)
-        for (int r = rank + 1; r < 7; r++) {
-            setBit(mask, r * 8 + file);
-        }
+        for (ChessDirection direction : {NORTH, SOUTH, EAST, WEST}) {
+            Square sq = square;
 
-        // South (decreasing rank, stop before edge)
-        for (int r = rank - 1; r > 0; r--) {
-            setBit(mask, r * 8 + file);
-        }
+            while (true) {
+                sq += direction;
 
-        // East (stop before edge)
-        for (int f = file + 1; f < 7; f++) {
-            setBit(mask, rank * 8 + f);
-        }
+                // Went off board
+                if (sq < 0 || sq >= 64) break;
 
-        // West (stop before edge)
-        for (int f = file - 1; f > 0; f--) {
-            setBit(mask, rank * 8 + f);
+                // For horizontal moves, check if we wrapped to different rank
+                if ((direction == EAST || direction == WEST) &&
+                    boardRank(sq) != startRank) break;
+
+                // Stop before hitting the edge 
+                if (hitsBorder(sq)) break;
+
+                setBit(mask, sq);
+            }
         }
 
         m_RookMasks[square] = mask;
@@ -52,44 +53,34 @@ void MoveGenerator::initRookMasks() {
 void MoveGenerator::initBishopMasks() {
     FOR_EACH_SQUARE(square) {
         Bitboard mask = 0;
-        int rank = boardRank(square);
-        int file = boardFile(square);
-        int f, r;
+        int currentRank = boardRank(square);
 
-        // North-West (increasing rank, decreasing file, stop before edge)
-        f = file - 1;
-        r = rank + 1;
-        while (f > 0 && r < 7) {
-            setBit(mask, r * 8 + f);
-            f--;
-            r++;
-        }
+        for (ChessDirection direction : {NORTH_EAST, SOUTH_EAST, NORTH_WEST, SOUTH_WEST}) {
+            Square sq = square;
+            currentRank = boardRank(square);
 
-        // North-East (increasing rank, increasing file, stop before edge)
-        f = file + 1;
-        r = rank + 1;
-        while (f < 7 && r < 7) {
-            setBit(mask, r * 8 + f);
-            f++;
-            r++;
-        }
+            while (true) {
+                sq += direction;
 
-        // South-East (decreasing rank, increasing file, stop before edge)
-        f = file + 1;
-        r = rank - 1;
-        while (f < 7 && r > 0) {
-            setBit(mask, r * 8 + f);
-            f++;
-            r--;
-        }
+                // Went off board
+                if (sq < 0 || sq >= 64) break;
 
-        // South-West (decreasing rank, decreasing file, stop before edge)
-        f = file - 1;
-        r = rank - 1;
-        while (f > 0 && r > 0) {
-            setBit(mask, r * 8 + f);
-            f--;
-            r--;
+                // Check if we wrapped to the same rank
+                if (boardRank(sq) == currentRank) break;
+
+                // Check if we wrapped to 2 ranks forwards
+                if ((direction == NORTH_EAST || direction == NORTH_WEST) &&
+                    boardRank(sq) == currentRank + 2) break;
+                // Check if we wrapped to 2 ranks backwards
+                if ((direction == SOUTH_EAST || direction == SOUTH_WEST) &&
+                    boardRank(sq) == currentRank - 2) break;
+
+                // Stop before hitting the edge 
+                if (hitsBorder(sq)) break;
+
+                setBit(mask, sq);
+                currentRank = boardRank(sq);
+            }
         }
 
         m_BishopMasks[square] = mask;
@@ -134,7 +125,7 @@ void MoveGenerator::initRookAttackTable() {
             uint64_t index = (occupancy * m_RookMagics[square]) >> m_RookShifts[square];
 
             // Store!
-            RookAttackTable[m_RookOffsets[square] + index] = attacks;
+            m_RookAttackTable[m_RookOffsets[square] + index] = attacks;
         }
     }
 }
@@ -153,8 +144,38 @@ void MoveGenerator::initBishopAttackTable() {
             uint64_t index = (occupancy * m_BishopMagics[square]) >> m_BishopShifts[square];
 
             // Store!
-            BishopAttackTable[m_BishopOffsets[square] + index] = attacks;
+            m_BishopAttackTable[m_BishopOffsets[square] + index] = attacks;
         }
+    }
+}
+
+void MoveGenerator::initKnightAttackTable() {
+    int octopus[] = { -17, -15, -10, -6, 6, 10, 15, 17 };
+    FOR_EACH_SQUARE(square) {
+        Bitboard attacks = 0;
+        int rank = boardRank(square);
+        int file = boardFile(square);
+
+        for (int offset : octopus) {
+            int target = square + offset;
+
+            // Bounds check
+            if (target < 0 || target >= 64) continue;
+
+            int targetRank = boardRank(target);
+            int targetFile = boardFile(target);
+
+            // Check if move wraps around board edges
+            int rankDiff = abs(targetRank - rank);
+            int fileDiff = abs(targetFile - file);
+
+            // Knight moves: 2 squares one direction, 1 square other direction
+            if ((rankDiff == 2 && fileDiff == 1) || (rankDiff == 1 && fileDiff == 2)) {
+                attacks |= (1ULL << target);
+            }
+        }
+
+        m_KnightAttackTable[square] = attacks;
     }
 }
 
@@ -197,12 +218,15 @@ Bitboard MoveGenerator::generateBishopAttacksSlow(int square, Bitboard occupied)
             // Went off board
             if (sq < 0 || sq >= 64) break;
 
+            // Check if we wrapped to the same rank
+            if (boardRank(sq) == currentRank) break;
+
             // Check if we wrapped to 2 ranks forwards
             if ((direction == NORTH_EAST || direction == NORTH_WEST) &&
-                (boardRank(sq) == currentRank + 2 || boardRank(sq) == currentRank)) break;
+                boardRank(sq) == currentRank + 2) break;
             // Check if we wrapped to 2 ranks backwards
             if ((direction == SOUTH_EAST || direction == SOUTH_WEST) &&
-                (boardRank(sq) == currentRank - 2 || boardRank(sq) == currentRank)) break;
+                boardRank(sq) == currentRank - 2) break;
 
             setBit(attacks, sq);
             if (occupied & (1ULL << sq)) break; // Captures an enemy piece
@@ -212,72 +236,6 @@ Bitboard MoveGenerator::generateBishopAttacksSlow(int square, Bitboard occupied)
     }
 
     return attacks;
-}
-
-void MoveGenerator::insertRookMoves(const BBPosition& position, std::vector<Move>& moves, Bitboard alliedPieces, Bitboard enemyPieces) const {
-    Bitboard rookPositions = position.getPieceBitboard(createPiece(position.getTurn(), ROOK));
-    Bitboard allPieces = alliedPieces | enemyPieces;
-
-    while (rookPositions) {
-        Square square = getLsb(rookPositions);
-        popLsb(rookPositions);
-        Bitboard occupied = allPieces & m_RookMasks[square];
-        uint64_t index = (occupied * m_RookMagics[square]) >> m_RookShifts[square];
-
-        Bitboard attacks = RookAttackTable[m_RookOffsets[square] + index];
-
-        // Remove friendly pieces
-        attacks &= ~alliedPieces;
-
-        // Separate captures from quiet moves
-        Bitboard captures = attacks & enemyPieces;
-        Bitboard quietMoves = attacks & ~enemyPieces;
-
-        while (captures) {
-            Square target = getLsb(captures);
-            popLsb(captures);
-            moves.emplace_back(Move(square, target, IS_CAPTURE));
-        }
-
-        while (quietMoves) {
-            Square target = getLsb(quietMoves);
-            popLsb(quietMoves);
-            moves.emplace_back(Move(square, target));
-        }
-    }
-}
-
-void MoveGenerator::insertBishopMoves(const BBPosition& position, std::vector<Move>& moves, Bitboard alliedPieces, Bitboard enemyPieces) const {
-    Bitboard bishopPositions = position.getPieceBitboard(createPiece(position.getTurn(), BISHOP));
-    Bitboard allPieces = alliedPieces | enemyPieces;
-
-    while (bishopPositions) {
-        Square square = getLsb(bishopPositions);
-        popLsb(bishopPositions);
-        Bitboard occupied = allPieces & m_BishopMasks[square];
-        uint64_t index = (occupied * m_BishopMagics[square]) >> m_BishopShifts[square];
-
-        Bitboard attacks = BishopAttackTable[m_BishopOffsets[square] + index];
-
-        // Remove friendly pieces
-        attacks &= ~alliedPieces;
-
-        // Separate captures from quiet moves
-        Bitboard captures = attacks & enemyPieces;
-        Bitboard quietMoves = attacks & ~enemyPieces;
-
-        while (captures) {
-            Square target = getLsb(captures);
-            popLsb(captures);
-            moves.emplace_back(Move(square, target, IS_CAPTURE));
-        }
-
-        while (quietMoves) {
-            Square target = getLsb(quietMoves);
-            popLsb(quietMoves);
-            moves.emplace_back(Move(square, target));
-        }
-    }
 }
 
 std::vector<Move> MoveGenerator::generateMoves(const BBPosition& position) const {
@@ -290,6 +248,8 @@ std::vector<Move> MoveGenerator::generateMoves(const BBPosition& position) const
     Bitboard enemyPieces = position.getColorBitboard(against);
     insertRookMoves(position, moves, alliedPieces, enemyPieces);
     insertBishopMoves(position, moves, alliedPieces, enemyPieces);
+    insertQueenMoves(position, moves, alliedPieces, enemyPieces);
+    insertKnightMoves(position, moves, alliedPieces, enemyPieces);
 
     return moves;
 }

@@ -26,7 +26,7 @@ void printMoves(const std::vector<Move>& moves) {
 }
 
 TEST(MoveGeneratorTest_TestSlidingPieces, TestMovesInSmallPosition) {
-    BBPosition p("5B2/3R4/3Pkrp1/2P2p2/2K2b2/6p1/3p4/8 b - - 0 1");
+    BBPosition p("5B2/3R4/3Pkrp1/2P2p2/2K2b2/6p1/3p1q2/3n4 b - - 0 1");
     std::vector<Move> moves = p.getMoves();
     
     // printMoves(moves);
@@ -35,10 +35,27 @@ TEST(MoveGeneratorTest_TestSlidingPieces, TestMovesInSmallPosition) {
     // Rook moves
     EXPECT_TRUE(containsMove(moves, 45, 53));
     EXPECT_TRUE(containsMove(moves, 45, 61, IS_CAPTURE));
+    EXPECT_FALSE(containsMove(moves, 45, 46)); // Allied piece
     // Bishop moves
     EXPECT_TRUE(containsMove(moves, 29, 20));
     EXPECT_TRUE(containsMove(moves, 29, 38));
     EXPECT_TRUE(containsMove(moves, 29, 47));
     EXPECT_TRUE(containsMove(moves, 29, 36));
     EXPECT_TRUE(containsMove(moves, 29, 43, IS_CAPTURE));
+    EXPECT_FALSE(containsMove(moves, 29, 22)); // Allied piece
+    EXPECT_FALSE(containsMove(moves, 29, 56)); // Wrapping file
+    // Queen moves
+    EXPECT_TRUE(containsMove(moves, 13, 12));
+    EXPECT_TRUE(containsMove(moves, 13, 14));
+    EXPECT_TRUE(containsMove(moves, 13, 20));
+    EXPECT_TRUE(containsMove(moves, 13, 21));
+    EXPECT_TRUE(containsMove(moves, 13, 6));
+    EXPECT_TRUE(containsMove(moves, 13, 4));
+    EXPECT_TRUE(containsMove(moves, 13, 34, IS_CAPTURE));
+    // Knight moves
+    EXPECT_TRUE(containsMove(moves, 3, 9));
+    EXPECT_TRUE(containsMove(moves, 3, 18));
+    EXPECT_TRUE(containsMove(moves, 3, 20));
+    EXPECT_FALSE(containsMove(moves, 3, 13)); // Allied piece
 }
+
