@@ -11,11 +11,16 @@ enum MoveFlags {
 
 struct Move {
     uint16_t move;
+    Type promotedTo;
 
 public:
     Move() : move(0) {}
 
     Move(Square from, Square to) : move((from << 6) | to) {}
+
+    Move(Square from, Square to, Type promotedTo)
+        : move((from << 6) | to | IS_PROMOTION), promotedTo(promotedTo) {
+    }
 
     Move(Square from, Square to, uint16_t flags)
         : move((from << 6) | to | flags) {
@@ -30,5 +35,21 @@ public:
 
     bool operator==(const Move& other) const {
         return move == other.move;
+    }
+
+    std::string toUCI() const {
+        std::string uci = getSquareNotation(from()) + getSquareNotation(to());
+
+        if (isPromotion()) {
+            switch (promotedTo) {
+            case QUEEN:  uci += 'q'; break;
+            case ROOK:   uci += 'r'; break;
+            case BISHOP: uci += 'b'; break;
+            case KNIGHT: uci += 'n'; break;
+            default: break;
+            }
+        }
+
+        return uci;
     }
 };

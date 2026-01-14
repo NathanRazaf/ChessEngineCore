@@ -19,6 +19,8 @@ void MoveGenerator::initializeTables() {
     initRookAttackTable();
     initBishopAttackTable();
     initKnightAttackTable();
+    initKingAttackTable();
+    initPawnAttackTable();
 }
 
 void MoveGenerator::initRookMasks() {
@@ -171,13 +173,91 @@ void MoveGenerator::initKnightAttackTable() {
 
             // Knight moves: 2 squares one direction, 1 square other direction
             if ((rankDiff == 2 && fileDiff == 1) || (rankDiff == 1 && fileDiff == 2)) {
-                attacks |= (1ULL << target);
+                setBit(attacks, target);
             }
         }
 
         m_KnightAttackTable[square] = attacks;
     }
 }
+
+void MoveGenerator::initKingAttackTable() {
+    int offsets[] = { -9, -8, -7, -1, 1, 7, 8, 9 };
+    FOR_EACH_SQUARE(square) {
+        Bitboard attacks = 0;
+        int rank = boardRank(square);
+        int file = boardFile(square);
+        
+        for (int offset : offsets) {
+            int target = square + offset;
+            
+            // Bounds check
+            if (target < 0 || target >= 64) continue;
+            
+            int targetRank = boardRank(target);
+            int targetFile = boardFile(target);
+            
+            // Check if move wraps around board edges
+            int rankDiff = abs(targetRank - rank);
+            int fileDiff = abs(targetFile - file);
+            
+            // King moves: exactly 1 square in any direction
+            if (rankDiff <= 1 && fileDiff <= 1) {
+                setBit(attacks, target);
+            }
+        }
+
+        m_KingAttackTable[square] = attacks;
+    }
+}
+
+void MoveGenerator::initPawnAttackTable() {
+    FOR_EACH_SQUARE(square) {
+        int rank = boardRank(square);
+        int file = boardFile(square);
+
+        Bitboard whiteAttacks = 0;
+        Bitboard blackAttacks = 0;
+
+        // White pawns
+        int wOffsets[] = { 7, 9 };
+        for (int offset : wOffsets) {
+            int target = square + offset;
+           
+            // Bounds check
+            if (target < 0 || target >= 64) continue;
+            
+            int targetRank = boardRank(target);
+            int fileDiff = abs(boardFile(target) - file);
+            
+            // Must move exactly 1 rank up and 1 file diagonal
+            if (targetRank == rank + 1 && fileDiff == 1) {
+                setBit(whiteAttacks, target);
+            }
+        }
+
+        // Black pawns
+        int bOffsets[] = { -7, -9 };
+        for (int offset : bOffsets) {
+            int target = square + offset;
+            
+            // Bounds check
+            if (target < 0 || target >= 64) continue;
+            
+            int targetRank = boardRank(target);
+            int fileDiff = abs(boardFile(target) - file);
+            
+            // Must move exactly 1 rank down and 1 file diagonal
+            if (targetRank == rank - 1 && fileDiff == 1) {
+                setBit(blackAttacks, target);
+            }
+        }
+
+        m_WhitePawnAttackTable[square] = whiteAttacks;
+        m_BlackPawnAttackTable[square] = blackAttacks;
+    }
+}
+
 
 Bitboard MoveGenerator::generateRookAttacksSlow(int square, Bitboard occupied) const {
     Bitboard attacks = 0;
@@ -238,6 +318,46 @@ Bitboard MoveGenerator::generateBishopAttacksSlow(int square, Bitboard occupied)
     return attacks;
 }
 
+void MoveGenerator::insertPawnMoves(const BBPosition& position, std::vector<Move>& moves,
+    Bitboard alliedPieces, Bitboard enemyPieces) const {
+    Color us = position.getTurn();
+    Bitboard ourPawns = position.getPieceBitboard(createPiece(us, PAWN));
+    Bitboard allPieces = alliedPieces | enemyPieces;
+    Square enPassantSquare = position.getEnPassantSquare();
+    while (ourPawns) {
+        Square sq = popLsb(ourPawns);
+        
+        // Add captures
+        Bitboard atks = getPawnAttacks(us, sq);
+        Bitboard captures = atks & enemyPieces;
+        while (captures) {
+            Square to = popLsb(captures);
+            moves.emplace_back(Move(sq, to, IS_CAPTURE));
+        }
+
+        // Add en passant if available
+        if (enPassantSquare != EMPTY) {
+            // One of the squares attacked by the current pawn is the en passant square
+            if (getBit(atks, enPassantSquare)) { 
+                moves.emplace_back(Move(sq, enPassantSquare, IS_EN_PASSANT));
+            }
+        }
+
+        // Add forward moves
+        ChessDirection dir = us == WHITE ? NORTH : SOUTH;
+        Square to = sq + dir;
+        if (getBit(allPieces, to)) continue; // Blocked square
+        moves.emplace_back(Move(sq, to));
+        // Try adding second square if pawn is at starting position
+        Bitboard startingRank = us == WHITE ? Rank2BB : Rank7BB;
+        if (getBit(startingRank, sq)) { // Means current square is in the starting rank
+            Square to2 = to + dir;
+            if (getBit(allPieces, to2)) continue; // Blocked square
+            moves.emplace_back(Move(sq, to2));
+        }
+    }
+};
+
 std::vector<Move> MoveGenerator::generateMoves(const BBPosition& position) const {
     std::vector<Move> moves = {};
     moves.reserve(218); // There are theoretically at most 218 possible moves in a position
@@ -250,6 +370,8 @@ std::vector<Move> MoveGenerator::generateMoves(const BBPosition& position) const
     insertBishopMoves(position, moves, alliedPieces, enemyPieces);
     insertQueenMoves(position, moves, alliedPieces, enemyPieces);
     insertKnightMoves(position, moves, alliedPieces, enemyPieces);
+    insertKingMoves(position, moves, alliedPieces, enemyPieces);
+    insertPawnMoves(position, moves, alliedPieces, enemyPieces);
 
     return moves;
 }

@@ -40,16 +40,30 @@ private:
         else if constexpr (PT == KNIGHT) {
             return m_KnightAttackTable[square];
         }
+
+        // King
+        else if constexpr (PT == KING) {
+            return m_KingAttackTable[square];
+        }
+    }
+
+    Bitboard getPawnAttacks(Color us, Square square) const {
+        if (us == WHITE) {
+            return m_WhitePawnAttackTable[square];
+        }
+        else {
+            return m_BlackPawnAttackTable[square];
+        }
     }
 
     template<Type PT>
-    void insertPieceMoves(Bitboard piecePositions, Bitboard alliedPieces,
+    void insertPieceMoves(const BBPosition& position, Bitboard alliedPieces,
         Bitboard enemyPieces, std::vector<Move>& moves) const {
+        Bitboard piecePositions = position.getPieceBitboard(createPiece(position.getTurn(), PT));
         Bitboard allPieces = alliedPieces | enemyPieces;
 
         while (piecePositions) {
-            Square square = getLsb(piecePositions);
-            popLsb(piecePositions);
+            Square square = popLsb(piecePositions);
 
             Bitboard attacks = getAttacks<PT>(square, allPieces) & ~alliedPieces;
 
@@ -62,16 +76,14 @@ private:
         // Captures
         Bitboard captures = targets & enemyPieces;
         while (captures) {
-            Square target = getLsb(captures);
-            popLsb(captures);
+            Square target = popLsb(captures);
             moves.emplace_back(Move(from, target, IS_CAPTURE));
         }
 
         // Quiet moves
         Bitboard quietMoves = targets & ~enemyPieces;
         while (quietMoves) {
-            Square target = getLsb(quietMoves);
-            popLsb(quietMoves);
+            Square target = popLsb(quietMoves);
             moves.emplace_back(Move(from, target));
         }
     }
@@ -158,6 +170,8 @@ private:
     void initRookAttackTable();
     void initBishopAttackTable();
     void initKnightAttackTable();
+    void initKingAttackTable();
+    void initPawnAttackTable();
     Bitboard indexToOccupancy(int index, Bitboard mask) const {
         Bitboard occupancy = 0;
         Bitboard maskCopy = mask;
@@ -183,26 +197,30 @@ private:
     Bitboard generateBishopAttacksSlow(int square, Bitboard occupied) const;
     void insertRookMoves(const BBPosition& position, std::vector<Move>& moves,
         Bitboard alliedPieces, Bitboard enemyPieces) const {
-        Bitboard rookPositions = position.getPieceBitboard(createPiece(position.getTurn(), ROOK));
-        insertPieceMoves<ROOK>(rookPositions, alliedPieces, enemyPieces, moves);
+        insertPieceMoves<ROOK>(position, alliedPieces, enemyPieces, moves);
     }
 
     void insertBishopMoves(const BBPosition& position, std::vector<Move>& moves,
         Bitboard alliedPieces, Bitboard enemyPieces) const {
-        Bitboard bishopPositions = position.getPieceBitboard(createPiece(position.getTurn(), BISHOP));
-        insertPieceMoves<BISHOP>(bishopPositions, alliedPieces, enemyPieces, moves);
+        insertPieceMoves<BISHOP>(position, alliedPieces, enemyPieces, moves);
     }
     void insertQueenMoves(const BBPosition& position, std::vector<Move>& moves,
         Bitboard alliedPieces, Bitboard enemyPieces) const {
-        Bitboard queenPositions = position.getPieceBitboard(createPiece(position.getTurn(), QUEEN));
-        insertPieceMoves<QUEEN>(queenPositions, alliedPieces, enemyPieces, moves);
+        insertPieceMoves<QUEEN>(position, alliedPieces, enemyPieces, moves);
     }
 
     void insertKnightMoves(const BBPosition& position, std::vector<Move>& moves,
         Bitboard alliedPieces, Bitboard enemyPieces) const {
-        Bitboard knightPositions = position.getPieceBitboard(createPiece(position.getTurn(), KNIGHT));
-        insertPieceMoves<KNIGHT>(knightPositions, alliedPieces, enemyPieces, moves);
+        insertPieceMoves<KNIGHT>(position, alliedPieces, enemyPieces, moves);
     }
+
+    void insertKingMoves(const BBPosition& position, std::vector<Move>& moves,
+        Bitboard alliedPieces, Bitboard enemyPieces) const {
+        insertPieceMoves<KING>(position, alliedPieces, enemyPieces, moves);
+    }
+
+    void insertPawnMoves(const BBPosition& position, std::vector<Move>& moves,
+        Bitboard alliedPieces, Bitboard enemyPieces) const;
 
     MoveGenerator() {
         initializeTables();

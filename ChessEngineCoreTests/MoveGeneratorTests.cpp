@@ -25,7 +25,7 @@ void printMoves(const std::vector<Move>& moves) {
     }
 }
 
-TEST(MoveGeneratorTest_TestSlidingPieces, TestMovesInSmallPosition) {
+TEST(MoveGeneratorTest_TestPieces, TestMovesInSmallPosition) {
     BBPosition p("5B2/3R4/3Pkrp1/2P2p2/2K2b2/6p1/3p1q2/3n4 b - - 0 1");
     std::vector<Move> moves = p.getMoves();
     
@@ -57,5 +57,39 @@ TEST(MoveGeneratorTest_TestSlidingPieces, TestMovesInSmallPosition) {
     EXPECT_TRUE(containsMove(moves, 3, 18));
     EXPECT_TRUE(containsMove(moves, 3, 20));
     EXPECT_FALSE(containsMove(moves, 3, 13)); // Allied piece
+    // King moves
+    EXPECT_TRUE(containsMove(moves, 44, 43, IS_CAPTURE));
+    EXPECT_TRUE(containsMove(moves, 44, 51, IS_CAPTURE));
+    EXPECT_TRUE(containsMove(moves, 44, 36));
+    EXPECT_FALSE(containsMove(moves, 44, 45)); // Allied piece
 }
 
+TEST(MoveGeneratorTest_TestPieces, TestWhitePawnMoves) {
+    BBPosition p("4k3/8/8/1pPppp2/P4P2/8/3P4/4K3 w - d6 0 1");
+    std::vector<Move> moves = p.getMoves();
+
+    // printMoves(moves);
+
+    // White's turn
+    EXPECT_TRUE(containsMove(moves, 11, 19));
+    EXPECT_TRUE(containsMove(moves, 11, 27)); // Double jump
+    EXPECT_FALSE(containsMove(moves, 29, 37)); // Forward move blocked
+    // Captures
+    EXPECT_TRUE(containsMove(moves, 34, 43, IS_EN_PASSANT));
+    EXPECT_TRUE(containsMove(moves, 24, 33, IS_CAPTURE));
+}
+
+TEST(MoveGeneratorTest_TestPieces, TestBlackPawnMoves) {
+    BBPosition p("4k3/3p4/4p3/4p1p1/1Pp2P2/2PPP3/8/4K3 b - b3 0 1");
+    std::vector<Move> moves = p.getMoves();
+
+    // printMoves(moves);
+
+    // Black's turn
+    EXPECT_TRUE(containsMove(moves, 51, 43));
+    EXPECT_TRUE(containsMove(moves, 51, 35)); // Double jump
+    EXPECT_FALSE(containsMove(moves, 44, 36)); // Forward move blocked
+    // Captures
+    EXPECT_TRUE(containsMove(moves, 26, 17, IS_EN_PASSANT));
+    EXPECT_TRUE(containsMove(moves, 26, 19, IS_CAPTURE));
+}

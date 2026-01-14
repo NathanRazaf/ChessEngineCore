@@ -58,16 +58,18 @@ inline bool getBit(Bitboard bb, int sq) {
     return (bb >> sq) & 1ULL;
 }
 
-inline void popLsb(Bitboard& bb) {
+inline Square getLsb(Bitboard bb) {
+    return std::countr_zero(bb);
+}
+
+inline Square popLsb(Bitboard& bb) {
+    Square sq = getLsb(bb);
     bb &= bb - 1;
+    return sq;
 }
 
 inline int countBits(Bitboard bb) {
     return std::popcount(bb);
-}
-
-inline int getLsb(Bitboard bb) {
-    return std::countr_zero(bb);
 }
 
 inline std::vector<Square> getSquareList(Bitboard bb) {
@@ -76,13 +78,9 @@ inline std::vector<Square> getSquareList(Bitboard bb) {
     squares.reserve(64);
 
     while (bbCopy) {
-        // Get position of lowest bit in bitboard
-        Square square = getLsb(bbCopy);  // Count trailing zeros
-
+        // Get and pop position of lowest bit in bitboard
+        Square square = popLsb(bbCopy);
         squares.push_back(square);
-
-        // Remove this bit from bitboard and move to next
-        popLsb(bbCopy);
     }
 
     return squares;
